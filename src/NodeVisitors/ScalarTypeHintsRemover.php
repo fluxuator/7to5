@@ -14,7 +14,7 @@ class ScalarTypeHintsRemover extends NodeVisitorAbstract
     public function leaveNode(Node $node)
     {
         if (!$node instanceof Param) {
-            return;
+            return null;
         }
 
         if ($node->type instanceof Node\NullableType) {

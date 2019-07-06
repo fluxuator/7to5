@@ -2,6 +2,7 @@
 
 namespace Spatie\Php7to5;
 
+use RuntimeException;
 use Spatie\Php7to5\Exceptions\InvalidParameter;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Finder\Finder;
@@ -10,29 +11,36 @@ class DirectoryConverter
 {
     /** @var string */
     protected $sourceDirectory;
+
     /** @var string */
     protected $copyNonPhpFiles = true;
+
     /** @var bool */
     protected $cleanDestinationDirectory = false;
+
     /** @var string[] */
     protected $extensions;
+
     /** @var null|string[] */
     protected $excludes;
+
     protected $logger;
 
     /**
-     * DirectoryConverter constructor.
-     *
-     * @param string $sourceDirectory
-     * @param string[] $extensions
+     * @param string        $sourceDirectory
+     * @param string[]      $extensions
      * @param string[]|null $excludes
      *
-     * @throws \Spatie\Php7to5\Exceptions\InvalidParameter
+     * @throws InvalidParameter
      */
-    public function __construct($sourceDirectory, array $extensions, array $excludes = null)
+    public function __construct($sourceDirectory, array $extensions = ['php'], array $excludes = null)
     {
         if (!file_exists($sourceDirectory)) {
             throw InvalidParameter::directoryDoesNotExist($sourceDirectory);
+        }
+
+        if (!count($extensions)) {
+            throw InvalidParameter::emptyExtensionList();
         }
 
         $this->sourceDirectory = $sourceDirectory;
@@ -45,14 +53,24 @@ class DirectoryConverter
         $this->logger = $output;
     }
 
-    public function log($sourceItem, $target)
+    public function log($sourceFilePath, $targetFilePath)
     {
-        if (is_null($this->logger)) {
+        if ($this->logger === null) {
             return;
         }
-        $targetRealPath = realpath($target);
 
-        $this->logger->writeln("<comment>Converting {$sourceItem} to {$targetRealPath}...</comment>");
+        $sourcePath = substr($sourceFilePath, strlen(getcwd()) + 1);
+        $targetPath = substr($targetFilePath, strlen(getcwd()) + 1);
+
+        if ($this->isPhpFile($sourceFilePath)) {
+            $this->logger->writeln(
+                "Converting <info>{$sourcePath}</info> to <info>{$targetPath}</info>."
+            );
+        } else {
+            $this->logger->writeln(
+                "Copying <comment>{$sourcePath}</comment> to <comment>{$targetPath}</comment>."
+            );
+        }
     }
 
     /**
@@ -88,7 +106,7 @@ class DirectoryConverter
     /**
      * @param string $destinationDirectory
      *
-     * @throws \Spatie\Php7to5\Exceptions\InvalidParameter
+     * @throws InvalidParameter
      */
     public function savePhp5FilesTo($destinationDirectory)
     {
@@ -96,7 +114,7 @@ class DirectoryConverter
             throw InvalidParameter::directoryIsRequired();
         }
 
-        if($this->cleanDestinationDirectory){
+        if ($this->cleanDestinationDirectory) {
             $this->removeDirectory($destinationDirectory);
         }
 
@@ -106,11 +124,13 @@ class DirectoryConverter
     /**
      * @param string $sourceDirectory
      * @param string $destinationDirectory
+     *
+     * @throws InvalidParameter
      */
     protected function copyDirectory($sourceDirectory, $destinationDirectory)
     {
-        if (!is_dir($destinationDirectory)) {
-            mkdir($destinationDirectory);
+        if (!$this->createDirectory($destinationDirectory)) {
+            throw new RuntimeException('Unable to create a directory "'.$destinationDirectory.'".');
         }
 
         $finder = new Finder();
@@ -122,29 +142,36 @@ class DirectoryConverter
         }
 
         if ($this->excludes) {
-            foreach ($this->excludes as $exclude) {
-                $finder->notPath('/^'.preg_quote($exclude, '/').'/');
-            }
+            $finder->notPath($this->excludes);
         }
 
         foreach ($finder as $item) {
-            $target = $destinationDirectory.'/'.$item->getRelativePathname();
+            $targetRealPath = rtrim($destinationDirectory, DIRECTORY_SEPARATOR)
+                .DIRECTORY_SEPARATOR
+                .$item->getRelativePathname();
 
-            if ($item->isFile()) {
-                $isPhpFile = $this->isPhpFile($target);
-                if ($isPhpFile || $this->copyNonPhpFiles) {
-                    $targetDir = dirname($target);
-                    if ($targetDir && !is_dir($targetDir)) {
-                        mkdir($targetDir, 0755, true);
-                    }
-                    copy($item->getRealPath(), $target);
+            if (!$item->isFile()) {
+                continue;
+            }
 
-                    $this->log($item->getRelativePath(), $target);
+            $isPhpFile = $this->isPhpFile($targetRealPath);
 
-                    if ($isPhpFile) {
-                        $this->convertToPhp5($target);
-                    }
-                }
+            if (!$isPhpFile && !$this->copyNonPhpFiles) {
+                continue;
+            }
+
+            $targetDir = dirname($targetRealPath);
+
+            if ($targetDir && !$this->createDirectory($targetDir)) {
+                throw new RuntimeException('Unable to create a directory "'.$targetDir.'".');
+            }
+
+            $this->log($item->getRealPath(), $targetRealPath);
+
+            if ($isPhpFile) {
+                $this->convertToPhp5($item->getRealPath(), $targetRealPath);
+            } else {
+                copy($item->getRealPath(), $targetRealPath);
             }
         }
     }
@@ -164,13 +191,14 @@ class DirectoryConverter
     }
 
     /**
-     * @param string $filePath
+     * @param string $sourceFilePath
+     * @param string $targetFilePath
      */
-    protected function convertToPhp5($filePath)
+    protected function convertToPhp5($sourceFilePath, $targetFilePath)
     {
-        $converter = new Converter($filePath);
+        $converter = new Converter($sourceFilePath);
 
-        $converter->saveAsPhp5($filePath);
+        $converter->saveAsPhp5($targetFilePath);
     }
 
     /**
@@ -180,6 +208,22 @@ class DirectoryConverter
      */
     protected function isPhpFile($filePath)
     {
-        return in_array(strtolower(pathinfo($filePath, PATHINFO_EXTENSION)), $this->extensions, true);
+        $extension = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
+
+        return in_array($extension, $this->extensions, true);
+    }
+
+    /**
+     * @param string $directory
+     *
+     * @return bool
+     */
+    private function createDirectory($directory)
+    {
+        if (is_dir($directory)) {
+            return true;
+        }
+
+        return mkdir($directory, 0755, true) && is_dir($directory);
     }
 }

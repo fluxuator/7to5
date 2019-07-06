@@ -17,7 +17,7 @@ class ClassConstantVisibilityModifiersRemover extends NodeVisitorAbstract
     public function leaveNode(Node $node)
     {
         if (!($node instanceof ClassConst)) {
-            return;
+            return null;
         }
 
         $node->flags = 0; // Remove constant modifier

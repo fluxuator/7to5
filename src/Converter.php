@@ -4,6 +4,7 @@ namespace Spatie\Php7to5;
 
 use PhpParser\NodeTraverser;
 use PhpParser\ParserFactory;
+use PhpParser\PrettyPrinter\Standard;
 use Spatie\Php7to5\Exceptions\InvalidParameter;
 
 class Converter
@@ -14,7 +15,7 @@ class Converter
     /**
      * @param string $pathToPhp7Code
      *
-     * @throws \Spatie\Php7to5\Exceptions\InvalidParameter
+     * @throws InvalidParameter
      */
     public function __construct($pathToPhp7Code)
     {
@@ -46,15 +47,15 @@ class Converter
 
         $php7Statements = $parser->parse($php7code);
 
-        $traverser = $this->getTraverser();
+        $traverser = self::getTraverser();
 
         $php5Statements = $traverser->traverse($php7Statements);
 
-        return (new \PhpParser\PrettyPrinter\Standard())->prettyPrintFile($php5Statements);
+        return (new Standard())->prettyPrintFile($php5Statements);
     }
 
     /**
-     * @return \PhpParser\NodeTraverser
+     * @return NodeTraverser
      */
     public static function getTraverser()
     {

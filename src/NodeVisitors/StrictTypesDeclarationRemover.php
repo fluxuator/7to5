@@ -15,7 +15,7 @@ class StrictTypesDeclarationRemover extends NodeVisitorAbstract
     public function leaveNode(Node $node)
     {
         if (!$node instanceof DeclareDeclare) {
-            return;
+            return null;
         }
 
         if ($node->key === 'strict_type') {

@@ -13,7 +13,7 @@ class GroupUseReplacer extends NodeVisitorAbstract
     public function leaveNode(Node $node)
     {
         if (!$node instanceof Node\Stmt\GroupUse) {
-            return;
+            return null;
         }
 
         $nodePrefixParts = $node->prefix->parts;

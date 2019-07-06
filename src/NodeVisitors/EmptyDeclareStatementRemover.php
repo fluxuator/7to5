@@ -16,7 +16,7 @@ class EmptyDeclareStatementRemover extends NodeVisitorAbstract
     public function leaveNode(Node $node)
     {
         if (!$node instanceof Declare_) {
-            return;
+            return null;
         }
 
         $result = array_filter(array_map(function (DeclareDeclare $declare) {

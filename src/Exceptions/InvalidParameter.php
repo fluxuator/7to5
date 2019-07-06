@@ -14,7 +14,7 @@ class InvalidParameter extends Exception
     /**
      * @param string $directoryName
      *
-     * @return \Spatie\Php7to5\Exceptions\InvalidParameter
+     * @return InvalidParameter
      */
     public static function directoryDoesNotExist($directoryName)
     {
@@ -22,9 +22,17 @@ class InvalidParameter extends Exception
     }
 
     /**
+     * @return InvalidParameter
+     */
+    public static function emptyExtensionList()
+    {
+        return new static("Extension list shouldn't be empty");
+    }
+
+    /**
      * @param string $fileName
      *
-     * @return \Spatie\Php7to5\Exceptions\InvalidParameter
+     * @return InvalidParameter
      */
     public static function fileDoesNotExist($fileName)
     {
@@ -32,7 +40,7 @@ class InvalidParameter extends Exception
     }
 
     /**
-     * @return \Spatie\Php7to5\Exceptions\InvalidParameter
+     * @return InvalidParameter
      */
     public static function directoryIsRequired()
     {

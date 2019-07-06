@@ -14,7 +14,7 @@ class ReturnTypesRemover extends NodeVisitorAbstract
     public function leaveNode(Node $node)
     {
         if (!$node instanceof FunctionLike) {
-            return;
+            return null;
         }
 
         $node->returnType = null;

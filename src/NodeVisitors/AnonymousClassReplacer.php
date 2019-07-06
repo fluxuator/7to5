@@ -23,12 +23,12 @@ class AnonymousClassReplacer extends NodeVisitorAbstract
     public function leaveNode(Node $node)
     {
         if (!$node instanceof Node\Expr\New_) {
-            return;
+            return null;
         }
 
         $classNode = $node->class;
         if (!$classNode instanceof Node\Stmt\Class_) {
-            return;
+            return null;
         }
 
         $newClassName = 'AnonymousClass'.count($this->anonymousClassNodes);
@@ -97,9 +97,9 @@ class AnonymousClassReplacer extends NodeVisitorAbstract
 
     /**
      * @param array $nodes
-     * @param $hookIndex
-     * @param $anonymousClassStatements
-     * 
+     * @param       $hookIndex
+     * @param       $anonymousClassStatements
+     *
      * @return array
      */
     protected function moveAnonymousClassesToHook(array $nodes, $hookIndex, $anonymousClassStatements)

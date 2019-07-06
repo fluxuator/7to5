@@ -19,7 +19,7 @@ class SpaceshipOperatorReplacer extends NodeVisitorAbstract
     public function leaveNode(Node $node)
     {
         if (!$node instanceof Spaceship) {
-            return;
+            return null;
         }
 
         /*
