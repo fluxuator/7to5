@@ -21,5 +21,7 @@ class StrictTypesDeclarationRemover extends NodeVisitorAbstract
         if ($node->key === 'strict_type') {
             return NodeTraverser::REMOVE_NODE;
         }
+
+        return null;
     }
 }

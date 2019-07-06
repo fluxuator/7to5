@@ -20,7 +20,7 @@ class DefineArrayReplacer extends NodeVisitorAbstract
             return null;
         }
 
-        if ($node->name != 'define') {
+        if ($node->name !== 'define') {
             return null;
         }
 

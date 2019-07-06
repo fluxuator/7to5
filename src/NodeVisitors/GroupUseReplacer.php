@@ -18,11 +18,11 @@ class GroupUseReplacer extends NodeVisitorAbstract
 
         $nodePrefixParts = $node->prefix->parts;
 
-        $seperateUseStatements = array_map(function ($useNode) use ($nodePrefixParts) {
+        $separateUseStatements = array_map(function ($useNode) use ($nodePrefixParts) {
             return $this->createUseNode($nodePrefixParts, $useNode);
         }, $node->uses);
 
-        return $seperateUseStatements;
+        return $separateUseStatements;
     }
 
     protected function createUseNode(array $nodePrefixParts, Node $useNode)
@@ -31,7 +31,7 @@ class GroupUseReplacer extends NodeVisitorAbstract
 
         $nameNode = new Node\Name($fullClassName);
 
-        $alias = ($useNode->alias == $useNode->name) ? null : $useNode->alias;
+        $alias = ($useNode->alias === $useNode->name) ? null : $useNode->alias;
 
         $useNode = new Node\Stmt\Use_([new Node\Stmt\UseUse($nameNode, $alias)], $useNode->type);
 

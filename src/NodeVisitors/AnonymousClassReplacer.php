@@ -117,10 +117,8 @@ class AnonymousClassReplacer extends NodeVisitorAbstract
      */
     public function convertToPhp5Statements(array $php7statements)
     {
-        $converter = Converter::getTraverser($php7statements);
+        $converter = Converter::getTraverser();
 
-        $php5Statements = $converter->traverse($php7statements);
-
-        return $php5Statements;
+        return $converter->traverse($php7statements);
     }
 }
