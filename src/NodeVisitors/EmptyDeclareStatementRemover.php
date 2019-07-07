@@ -19,8 +19,8 @@ class EmptyDeclareStatementRemover extends NodeVisitorAbstract
             return null;
         }
 
-        $result = array_filter(array_map(function (DeclareDeclare $declare) {
-            return $declare->key !== 'strict_types';
+        $result = array_filter(array_map(static function (DeclareDeclare $declare) {
+            return (string) $declare->key !== 'strict_types';
         }, $node->declares));
 
         if (empty($result)) {

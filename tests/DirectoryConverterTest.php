@@ -2,9 +2,11 @@
 
 namespace Spatie\Php7to5\Test;
 
-use PHPUnit\Framework\TestCase;
 use Illuminate\Filesystem\Filesystem;
+use PHPUnit\Framework\TestCase;
 use Spatie\Php7to5\DirectoryConverter;
+use Spatie\Php7to5\Exceptions\InvalidParameter;
+use SplFileInfo;
 
 class DirectoryConverterTest extends TestCase
 {
@@ -15,10 +17,14 @@ class DirectoryConverterTest extends TestCase
         $this->initializeTempDirectory();
     }
 
-    /** @test */
+    /**
+     * @test
+     *
+     * @throws InvalidParameter
+     */
     public function it_can_copy_and_convert_an_entire_directory()
     {
-        $directoryConverter = new DirectoryConverter($this->getSourceDirectory(), ['php']);
+        $directoryConverter = new DirectoryConverter($this->getSourceDirectory());
 
         $directoryConverter->savePhp5FilesTo($this->getTempDirectory());
 
@@ -34,10 +40,13 @@ class DirectoryConverterTest extends TestCase
         $this->assertAllPhpFilesWereConverted($this->getTempDirectory());
     }
 
-    /** @test */
+    /** @test
+     *
+     * @throws InvalidParameter
+     */
     public function it_can_copy_and_convert_an_entire_directory_filtering_on_php_files()
     {
-        $directoryConverter = new DirectoryConverter($this->getSourceDirectory(), ['php']);
+        $directoryConverter = new DirectoryConverter($this->getSourceDirectory());
 
         $directoryConverter
             ->doNotCopyNonPhpFiles()
@@ -59,10 +68,17 @@ class DirectoryConverterTest extends TestCase
         $this->assertAllPhpFilesWereConverted($this->getTempDirectory());
     }
 
-    /** @test */
+    /**
+     * @test
+     *
+     * @throws InvalidParameter
+     */
     public function it_can_copy_and_convert_an_entire_directory_filtering_on_custom_php_files()
     {
-        $directoryConverter = new DirectoryConverter($this->getSourceDirectory(), ['php', 'phtml']);
+        $directoryConverter = new DirectoryConverter(
+            $this->getSourceDirectory(),
+            ['php', 'phtml']
+        );
 
         $directoryConverter
             ->doNotCopyNonPhpFiles()
@@ -84,10 +100,18 @@ class DirectoryConverterTest extends TestCase
         $this->assertAllPhpFilesWereConverted($this->getTempDirectory());
     }
 
-    /** @test */
+    /**
+     * @test
+     *
+     * @throws InvalidParameter
+     */
     public function it_can_copy_and_convert_an_entire_directory_with_exclude_directory()
     {
-        $directoryConverter = new DirectoryConverter($this->getSourceDirectory(), ['php'], ['sourceDirectory/directory1']);
+        $directoryConverter = new DirectoryConverter(
+            $this->getSourceDirectory(),
+            ['php'],
+            ['sourceDirectory/directory1']
+        );
 
         $directoryConverter
             ->doNotCopyNonPhpFiles()
@@ -109,10 +133,18 @@ class DirectoryConverterTest extends TestCase
         $this->assertAllPhpFilesWereConverted($this->getTempDirectory());
     }
 
-    /** @test */
+    /**
+     * @test
+     *
+     * @throws InvalidParameter
+     */
     public function it_can_copy_and_convert_an_entire_directory_with_exclude_file()
     {
-        $directoryConverter = new DirectoryConverter($this->getSourceDirectory(), ['php'], ['sourceDirectory/directory1/file1.php']);
+        $directoryConverter = new DirectoryConverter(
+            $this->getSourceDirectory(),
+            ['php'],
+            ['sourceDirectory/directory1/file1.php']
+        );
 
         $directoryConverter
             ->doNotCopyNonPhpFiles()
@@ -134,7 +166,11 @@ class DirectoryConverterTest extends TestCase
         $this->assertAllPhpFilesWereConverted($this->getTempDirectory());
     }
 
-    /** @test */
+    /**
+     * @test
+     *
+     * @throws InvalidParameter
+     */
     public function it_can_clean_destination_directory_before_conversion()
     {
         # Convert all php files including sub-directories
@@ -142,6 +178,7 @@ class DirectoryConverterTest extends TestCase
             $this->getSourceDirectory(),
             ['php']
         );
+
         $directoryConverter1->savePhp5FilesTo($this->getTempDirectory());
 
         $directoryConverter2 = new DirectoryConverter(
@@ -156,19 +193,19 @@ class DirectoryConverterTest extends TestCase
         $this->assertTempFileExists([
             'sourceDirectory/file1.php',
             'sourceDirectory/file2.php',
-            'sourceDirectory/file3.txt'
+            'sourceDirectory/file3.txt',
         ]);
 
         $this->assertTempFileNotExists([
             'sourceDirectory/directory1/file1.php',
             'sourceDirectory/directory1/file2.php',
             'sourceDirectory/directory1/file3.txt',
-            'sourceDirectory/directory1/file4.phtml'
+            'sourceDirectory/directory1/file4.phtml',
         ]);
 
         $this->assertAllPhpFilesWereConverted($this->getTempDirectory());
 
-        $this->addGitignoreTo($this->getTempDirectory());
+        $this->addGitIgnoreTo($this->getTempDirectory());
     }
 
     public function initializeTempDirectory()
@@ -177,13 +214,13 @@ class DirectoryConverterTest extends TestCase
 
         mkdir($this->getTempDirectory());
 
-        $this->addGitignoreTo($this->getTempDirectory());
+        $this->addGitIgnoreTo($this->getTempDirectory());
     }
 
     /**
      * @param string $directory
      */
-    public function addGitignoreTo($directory)
+    public function addGitIgnoreTo($directory)
     {
         $fileName = "{$directory}/.gitignore";
 
@@ -237,8 +274,9 @@ class DirectoryConverterTest extends TestCase
 
         $allFiles = (new Filesystem())->allFiles($directory);
 
+        /** @var SplFileInfo $file */
         foreach ($allFiles as $file) {
-            if ($file->getExtension() == 'php') {
+            if ($file->getExtension() === 'php') {
                 $this->assertSame(trim($convertedPhpFileContents), file_get_contents($file->getRealPath()));
             }
         }

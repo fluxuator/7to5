@@ -17,6 +17,8 @@ class AnonymousClassReplacer extends NodeVisitorAbstract
      */
     protected $anonymousClassNodes = [];
 
+    public static $count = 0;
+
     /**
      * {@inheritdoc}
      */
@@ -27,11 +29,12 @@ class AnonymousClassReplacer extends NodeVisitorAbstract
         }
 
         $classNode = $node->class;
+
         if (!$classNode instanceof Node\Stmt\Class_) {
             return null;
         }
 
-        $newClassName = 'AnonymousClass'.count($this->anonymousClassNodes);
+        $newClassName = 'AnonymousClass'.(self::$count++);
 
         $classNode->name = $newClassName;
 
@@ -41,7 +44,8 @@ class AnonymousClassReplacer extends NodeVisitorAbstract
         $newNode = new Node\Expr\New_(
             new Node\Expr\ConstFetch(
                 new Node\Name($newClassName)
-            )
+            ),
+            $node->args
         );
 
         return $newNode;
@@ -49,6 +53,8 @@ class AnonymousClassReplacer extends NodeVisitorAbstract
 
     /**
      * {@inheritdoc}
+     *
+     * @throws InvalidPhpCode
      */
     public function afterTraverse(array $nodes)
     {
@@ -73,23 +79,22 @@ class AnonymousClassReplacer extends NodeVisitorAbstract
      * @param array $statements
      *
      * @return int
-     *
-     * @throws \Spatie\Php7to5\Exceptions\InvalidPhpCode
      */
-    protected function getAnonymousClassHookIndex(array $statements)
+    protected function getAnonymousClassHookIndex(array $statements): int
     {
         $hookIndex = false;
 
         foreach ($statements as $index => $statement) {
             if (!$statement instanceof Declare_ &&
                 !$statement instanceof Use_ &&
-                !$statement instanceof Namespace_) {
+                !$statement instanceof Namespace_
+            ) {
                 $hookIndex = $index;
             }
         }
 
         if ($hookIndex === false) {
-            throw InvalidPhpCode::noValidLocationFoundToInsertClasses();
+            return 1;
         }
 
         return $hookIndex;
@@ -102,7 +107,7 @@ class AnonymousClassReplacer extends NodeVisitorAbstract
      *
      * @return array
      */
-    protected function moveAnonymousClassesToHook(array $nodes, $hookIndex, $anonymousClassStatements)
+    protected function moveAnonymousClassesToHook(array $nodes, $hookIndex, $anonymousClassStatements): array
     {
         $preStatements = array_slice($nodes, 0, $hookIndex);
         $postStatements = array_slice($nodes, $hookIndex);
@@ -113,12 +118,10 @@ class AnonymousClassReplacer extends NodeVisitorAbstract
     /**
      * @param array $php7statements
      *
-     * @return \PhpParser\Node[]
+     * @return Node[]
      */
-    public function convertToPhp5Statements(array $php7statements)
+    public function convertToPhp5Statements(array $php7statements): array
     {
-        $converter = Converter::getTraverser();
-
-        return $converter->traverse($php7statements);
+        return Converter::getTraverser()->traverse($php7statements);
     }
 }

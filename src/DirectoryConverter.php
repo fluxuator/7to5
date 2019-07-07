@@ -142,7 +142,9 @@ class DirectoryConverter
         }
 
         if ($this->excludes) {
-            $finder->notPath($this->excludes);
+            foreach ($this->excludes as $exclude) {
+                $finder->notPath($exclude);
+            }
         }
 
         foreach ($finder as $item) {

@@ -20,7 +20,7 @@ class DefineArrayReplacer extends NodeVisitorAbstract
             return null;
         }
 
-        if ($node->name !== 'define') {
+        if ($node->name->toString() !== 'define') {
             return null;
         }
 
@@ -31,8 +31,11 @@ class DefineArrayReplacer extends NodeVisitorAbstract
             return null;
         }
 
-        $constNode = new Node\Const_($nameNode->value, $valueNode);
+        $constNode = new Node\Const_(
+            'const '.$nameNode->value,
+            $valueNode
+        );
 
-        return new Node\Stmt\Const_([$constNode]);
+        return $constNode;
     }
 }

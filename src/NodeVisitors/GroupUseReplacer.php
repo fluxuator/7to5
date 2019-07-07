@@ -3,6 +3,7 @@
 namespace Spatie\Php7to5\NodeVisitors;
 
 use PhpParser\Node;
+use PhpParser\Node\Stmt\UseUse;
 use PhpParser\NodeVisitorAbstract;
 
 class GroupUseReplacer extends NodeVisitorAbstract
@@ -31,10 +32,8 @@ class GroupUseReplacer extends NodeVisitorAbstract
 
         $nameNode = new Node\Name($fullClassName);
 
-        $alias = ($useNode->alias === $useNode->name) ? null : $useNode->alias;
+        $alias = ($useNode->alias === $useNode->name->toString()) ? null : $useNode->alias;
 
-        $useNode = new Node\Stmt\Use_([new Node\Stmt\UseUse($nameNode, $alias)], $useNode->type);
-
-        return $useNode;
+        return new Node\Stmt\Use_([new UseUse($nameNode, $alias)], $useNode->type);
     }
 }
